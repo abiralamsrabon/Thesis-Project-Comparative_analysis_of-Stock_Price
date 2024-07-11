@@ -1,0 +1,56 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.inspection import plot_partial_dependence
+
+# Load the dataset
+df = pd.read_csv('DATASET7k.csv')
+
+# Check for missing values
+print(df.isnull().sum())
+
+# Replace missing values with the mean of the corresponding column
+df = df.fillna(df.mean())
+
+# Convert date column to datetime
+df['Date'] = pd.to_datetime(df['Date'])
+
+# Sort the dataset by date
+df = df.sort_values(by='Date')
+
+# Extract the features
+X = df[['Open', 'High', 'Low', 'Volume']]
+
+# Extract the labels
+y = df['Close']
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Train a decision tree regressor model
+model = DecisionTreeRegressor(max_depth=4, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# Calculate the training and testing accuracy
+train_acc = model.score(X_train_scaled, y_train)
+test_acc = model.score(X_test_scaled, y_test)
+print('Training accuracy:', train_acc)
+print('Testing accuracy:', test_acc)
+
+
+# Plot the partial dependence of each feature on the predicted output
+fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
+plot_partial_dependence(model, X_train_scaled, features=[0, 1, 2, 3], feature_names=X_train.columns, grid_resolution=50, ax=axs[0,0])
+plot_partial_dependence(model, X_train_scaled, features=[(0,1), (0,2), (0,3)], feature_names=X_train.columns, grid_resolution=50, ax=axs[0,1])
+plot_partial_dependence(model, X_train_scaled, features=[(1,2), (1,3)], feature_names=X_train.columns, grid_resolution=50, ax=axs[1,0])
+plot_partial_dependence(model, X_train_scaled, features=[(2,3)], feature_names=X_train.columns, grid_resolution=50, ax=axs[1,1])
+plt.tight_layout()
+plt.show()
